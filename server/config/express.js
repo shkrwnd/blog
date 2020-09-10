@@ -12,7 +12,8 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 const routes = require('../routes/index.route');
 const config = require('./config');
-const passport = require('./passport')
+const passport = require('./passport');
+const socket = require('socket.io');
 
 const app = express();
 
@@ -44,6 +45,8 @@ res.sendFile(path.join(__dirname, '../../dist/index.html'));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+
 
 app.use(cookieParser());
 app.use(compress());
@@ -77,10 +80,28 @@ app.use((err, req, res, next) => {
     err.status = 400;
   }
 
+
   res.status(err.status || 500).json({
     message: err.message
   });
   next(err);
 });
 
-module.exports = app;
+
+var io;
+
+
+  const server = app.listen(config.port, () => {
+    console.info(`server started on port ${config.port} (${config.env})`);
+  });
+
+  io = socket.listen(server);
+
+  io.sockets.on('connection', (socket) => {
+    console.log('connected socket');
+  });
+
+
+app.locals.io = io;
+
+module.exports = {app};
